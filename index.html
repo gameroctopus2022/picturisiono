@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Editor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="main-page" class="page active">
+        <h1>Photo Editor</h1>
+        <button id="upload-btn">Upload Photo</button>
+        <input type="file" id="file-input" accept="image/*" style="display: none;">
+    </div>
+    
+    <div id="editor-page" class="page">
+        <div id="image-container">
+            <img id="uploaded-image" alt="Uploaded Image">
+        </div>
+        <div id="filter-buttons">
+            <button id="bw-filter-btn"></button>
+            <button id="negative-filter-btn"></button>
+        </div>
+        <button id="download-btn">Download Image</button>
+        <button id="back-btn">Back</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
