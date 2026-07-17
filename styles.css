@@ -92,11 +92,14 @@ h1 {
     transition: filter 0.3s;
 }
 
+/* ИЗМЕНЕНО: Контейнер для кнопок теперь идеально центрирует всё содержимое */
 #filter-buttons {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: center;  /* Центрирует все элементы по горизонтали */
+    align-items: center;      /* Выравнивает по вертикали */
+    gap: 20px;                /* Одинаковый фиксированный зазор между ВСЕМИ кнопками */
     margin: 1rem 0;
+    width: 100%;
 }
 
 #bw-filter-btn {
@@ -106,7 +109,7 @@ h1 {
     background: url('man.png') no-repeat center center;
     background-size: cover;
     padding: 0;
-    margin: 0 1rem;
+    margin: 0;                /* Убрали margin, так как теперь работает gap */
     border: 2px solid #fff;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     cursor: pointer;
@@ -124,7 +127,7 @@ h1 {
     background: url('negative.jpg') no-repeat center center;
     background-size: cover;
     padding: 0;
-    margin: 0 1rem;
+    margin: 0;                /* Убрали margin */
     border: 2px solid #fff;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     cursor: pointer;
@@ -132,6 +135,11 @@ h1 {
 }
 
 #negative-filter-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Эффект увеличения для кнопок, создаваемых через JS (Текст и Перлин) */
+#filter-buttons button:hover {
     transform: scale(1.1);
 }
 
@@ -144,7 +152,7 @@ button {
     cursor: pointer;
     background: #333;
     color: white;
-    transition: background 0.3s;
+    transition: background 0.3s, transform 0.2s;
 }
 
 button:hover {
