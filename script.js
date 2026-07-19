@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let isBW = false;
     let isNegative = false;
-    let isPerlin = false; // Переключатель нашего точечного шума
+    let isPerlin = false; 
+    let isPixelated = false; 
     let text = 'Text'; 
     let textColor = '#ffffff';
     let textSize = 25; 
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isDragging = false; 
     let dragOffsetX, dragOffsetY;
 
+    // Контейнер для текста
     const textContainer = document.createElement('div');
     textContainer.id = 'text-container';
     textContainer.style.position = 'absolute';
@@ -56,7 +58,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isEditing) e.preventDefault();
     });
 
-    // Кнопка ТЕКСТА
+    // --- ДИНАМИЧЕСКОЕ СОЗДАНИЕ КНОПОК ---
+
+    // 1. Кнопка ТЕКСТА
     const addTextBtn = document.createElement('button');
     addTextBtn.style.backgroundImage = 'url("text.jpg")';
     addTextBtn.style.backgroundSize = 'cover';
@@ -69,9 +73,9 @@ document.addEventListener('DOMContentLoaded', function() {
     addTextBtn.style.transition = 'transform 0.2s';
     addTextBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
 
-    // Кнопка точечного шума (рисунок perlin.jpg)
+    // 2. Кнопка ШУМА
     const perlinBtn = document.createElement('button');
-    perlinBtn.style.backgroundImage = 'url("perlin.jpg")';
+    perlinBtn.style.backgroundImage = 'url("perlin.png")'; 
     perlinBtn.style.backgroundSize = 'cover';
     perlinBtn.style.backgroundPosition = 'center';
     perlinBtn.style.width = '100px';
@@ -82,9 +86,29 @@ document.addEventListener('DOMContentLoaded', function() {
     perlinBtn.style.transition = 'transform 0.2s';
     perlinBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
 
-    // Добавляем во Flexbox-контейнер (всё выровняется по центру через CSS)
+    // 3. Кнопка ПИКСЕЛИЗАЦИИ (создаётся сразу в JS и загружает pixel.png)
+    const pixelFilterBtn = document.createElement('button');
+    pixelFilterBtn.style.backgroundImage = 'url("pixel.png")';
+    pixelFilterBtn.style.backgroundSize = 'cover';
+    pixelFilterBtn.style.backgroundPosition = 'center';
+    pixelFilterBtn.style.width = '100px';
+    pixelFilterBtn.style.height = '100px';
+    pixelFilterBtn.style.borderRadius = '15px';
+    pixelFilterBtn.style.border = '2px solid #fff';
+    pixelFilterBtn.style.cursor = 'pointer';
+    pixelFilterBtn.style.transition = 'transform 0.2s';
+    pixelFilterBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
+
+    // Добавляем hover-эффект для созданной кнопки
+    pixelFilterBtn.addEventListener('mouseenter', () => pixelFilterBtn.style.transform = 'scale(1.1)');
+    pixelFilterBtn.addEventListener('mouseleave', () => pixelFilterBtn.style.transform = 'scale(1)');
+
+    // Пушим все три кнопки в наш HTML-контейнер фильтров
     filterButtons.appendChild(addTextBtn);
     filterButtons.appendChild(perlinBtn);
+    filterButtons.appendChild(pixelFilterBtn);
+
+    // --- ЛОГИКА И ЭФФЕКТЫ ---
 
     uploadBtn.addEventListener('click', function() {
         fileInput.click();
@@ -110,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     mainPage.classList.remove('active');
                     editorPage.classList.add('active');
-                    removeNoiseOverlay();
+                    resetEffects();
                 };
             };
             reader.readAsDataURL(file);
@@ -119,35 +143,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     bwFilterBtn.addEventListener('click', function() {
         isBW = !isBW;
-        applyFiltersAndNoise();
+        applyAllEffects();
     });
 
     negativeFilterBtn.addEventListener('click', function() {
         isNegative = !isNegative;
-        applyFiltersAndNoise();
+        applyAllEffects();
     });
 
     perlinBtn.addEventListener('click', function() {
         isPerlin = !isPerlin;
-        applyFiltersAndNoise();
+        applyAllEffects();
     });
 
-    function applyFiltersAndNoise() {
+    pixelFilterBtn.addEventListener('click', function() {
+        isPixelated = !isPixelated;
+        applyAllEffects();
+    });
+
+    function applyAllEffects() {
         let filter = '';
         if (isBW) filter += 'grayscale(100%) ';
         if (isNegative) filter += 'invert(100%) ';
         uploadedImage.style.filter = filter.trim();
 
-        if (isPerlin) {
-            applyNoiseOverlay();
-        } else {
-            removeNoiseOverlay();
-        }
-    }
-
-    // Функция генерации ТОЧЕЧНОГО шума (эффект печати по точкам)
-    function applyNoiseOverlay() {
         let overlay = document.getElementById('perlin-canvas-overlay');
+        
+        if (!isPerlin && !isPixelated) {
+            if (overlay) overlay.remove();
+            uploadedImage.style.opacity = '1';
+            return;
+        }
+
         if (!overlay) {
             overlay = document.createElement('canvas');
             overlay.id = 'perlin-canvas-overlay';
@@ -163,85 +190,81 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.width = uploadedImage.offsetWidth;
         overlay.height = uploadedImage.offsetHeight;
         const ctx = overlay.getContext('2d');
-        
-        // Рисуем текущее изображение на скрытый холст, чтобы прочитать пиксели для дизеринга
+
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = overlay.width;
         tempCanvas.height = overlay.height;
         const tempCtx = tempCanvas.getContext('2d');
         
-        // Применяем CSS-фильтры к временному кадру, если они включены
-        let filterStr = '';
-        if (isBW) filterStr += 'grayscale(100%) ';
-        if (isNegative) filterStr += 'invert(100%) ';
-        tempCtx.filter = filterStr.trim();
+        if (isBW || isNegative) {
+            tempCtx.filter = filter.trim();
+        }
         tempCtx.drawImage(uploadedImage, 0, 0, overlay.width, overlay.height);
-
-        const imgData = tempCtx.getImageData(0, 0, overlay.width, overlay.height);
-        generateDotDithering(ctx, imgData, overlay.width, overlay.height);
-    }
-
-    function removeNoiseOverlay() {
-        const overlay = document.getElementById('perlin-canvas-overlay');
-        if (overlay) overlay.remove();
-        isPerlin = false;
-    }
-
-    // Алгоритм превращения картинки в россыпь точек
-    function generateDotDithering(targetCtx, sourceImgData, w, h) {
-        const data = sourceImgData.data;
-        targetCtx.clearRect(0, 0, w, h);
         
-        const outputImgData = targetCtx.createImageData(w, h);
-        const outData = outputImgData.data;
+        let currentImgData = tempCtx.getImageData(0, 0, overlay.width, overlay.height);
 
-        // Размер одной точки-кластера (чем больше, тем крупнее точки)
-        const dotSize = 2; 
+        // 1. Применяем пикселизацию (blockSize = 16 для выразительного эффекта)
+        if (isPixelated) {
+            currentImgData = processPixelation(currentImgData, overlay.width, overlay.height, 16);
+        }
 
-        for (let y = 0; y < h; y += dotSize) {
-            for (let x = 0; x < w; x += dotSize) {
+        // 2. Накладываем зернистый шум
+        if (isPerlin) {
+            currentImgData = processGrainNoise(currentImgData);
+        }
+
+        ctx.putImageData(currentImgData, 0, 0);
+        uploadedImage.style.opacity = isPixelated ? '0' : '1';
+    }
+
+    function processPixelation(imgData, w, h, blockSize = 16) {
+        const data = imgData.data;
+
+        for (let y = 0; y < h; y += blockSize) {
+            for (let x = 0; x < w; x += blockSize) {
                 
-                // Считаем среднюю яркость в блоке пикселей
-                let totalBrightness = 0;
-                let count = 0;
+                const centerX = Math.min(x + Math.floor(blockSize / 2), w - 1);
+                const centerY = Math.min(y + Math.floor(blockSize / 2), h - 1);
+                const centerIdx = (centerX + centerY * w) * 4;
                 
-                for (let dy = 0; dy < dotSize && (y + dy) < h; dy++) {
-                    for (let dx = 0; dx < dotSize && (x + dx) < w; dx++) {
+                const r = data[centerIdx];
+                const g = data[centerIdx + 1];
+                const b = data[centerIdx + 2];
+                const a = data[centerIdx + 3];
+
+                for (let dy = 0; dy < blockSize && (y + dy) < h; dy++) {
+                    for (let dx = 0; dx < blockSize && (x + dx) < w; dx++) {
                         const idx = ((x + dx) + (y + dy) * w) * 4;
-                        const r = data[idx];
-                        const g = data[idx + 1];
-                        const b = data[idx + 2];
-                        totalBrightness += (r + g + b) / 3;
-                        count++;
-                    }
-                }
-                
-                const avgBrightness = totalBrightness / count;
-                // Порог: чем темнее участок, тем выше шанс появления точки
-                const threshold = (avgBrightness / 255) * 100;
-                
-                for (let dy = 0; dy < dotSize && (y + dy) < h; dy++) {
-                    for (let dx = 0; dx < dotSize && (x + dx) < w; dx++) {
-                        const outIdx = ((x + dx) + (y + dy) * w) * 4;
-                        
-                        // Псевдослучайный шум создаёт красивую точечную структуру
-                        const randomChance = Math.random() * 100;
-                        if (randomChance > threshold) {
-                            outData[outIdx] = 0;     // Черная точка
-                            outData[outIdx + 1] = 0;
-                            outData[outIdx + 2] = 0;
-                            outData[outIdx + 3] = 255;
-                        } else {
-                            outData[outIdx] = 255;   // Белая точка (фон)
-                            outData[outIdx + 1] = 255;
-                            outData[outIdx + 2] = 255;
-                            outData[outIdx + 3] = 255;
-                        }
+                        data[idx] = r;
+                        data[idx + 1] = g;
+                        data[idx + 2] = b;
+                        data[idx + 3] = a;
                     }
                 }
             }
         }
-        targetCtx.putImageData(outputImgData, 0, 0);
+        return imgData;
+    }
+
+    function processGrainNoise(imgData) {
+        const data = imgData.data;
+        const noiseIntensity = 45; 
+        for (let i = 0; i < data.length; i += 4) {
+            const noise = (Math.random() - 0.5) * noiseIntensity;
+            data[i]     = Math.max(0, Math.min(255, data[i] + noise));
+            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
+            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
+        }
+        return imgData;
+    }
+
+    function resetEffects() {
+        const overlay = document.getElementById('perlin-canvas-overlay');
+        if (overlay) overlay.remove();
+        isPerlin = false;
+        isPixelated = false;
+        uploadedImage.style.opacity = '1';
+        uploadedImage.style.filter = 'none';
     }
 
     addTextBtn.addEventListener('click', function() {
@@ -300,10 +323,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('mousemove', function(e) {
         if (isDragging) {
-            const MathRect = uploadedImage.getBoundingClientRect(); 
+            const rect = uploadedImage.getBoundingClientRect(); 
             
-            let newX = e.clientX - dragOffsetX - MathRect.left;
-            let newY = e.clientY - dragOffsetY - MathRect.top;
+            let newX = e.clientX - dragOffsetX - rect.left;
+            let newY = e.clientY - dragOffsetY - rect.top;
             
             const maxX = uploadedImage.offsetWidth - textContainer.offsetWidth;
             const maxY = uploadedImage.offsetHeight - textContainer.offsetHeight;
@@ -326,6 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    fn = updateTextPosition;
     function updateTextPosition() {
         if (uploadedImage.offsetWidth && uploadedImage.offsetHeight) {
             const centerX = (uploadedImage.offsetWidth - textContainer.offsetWidth) / 2;
@@ -430,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         setTimeout(() => {
             document.addEventListener('click', function closePopup(e) {
-                if (!colorPopup.contains(e.target) && e.target !== textElement && e.target !== addTextBtn && e.target !== perlinBtn) {
+                if (!colorPopup.contains(e.target) && e.target !== textElement && e.target !== addTextBtn && e.target !== perlinBtn && e.target !== pixelFilterBtn) {
                     colorPopup.remove();
                     document.removeEventListener('click', closePopup);
                 }
@@ -444,10 +468,8 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.width = uploadedImage.naturalWidth;
         canvas.height = uploadedImage.naturalHeight;
 
-        // Рисуем базовую картинку
         ctx.drawImage(uploadedImage, 0, 0);
 
-        // Применяем фильтры (ЧБ / Негатив) перед расчётом точек
         if (isBW || isNegative) {
             let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             let data = imageData.data;
@@ -465,13 +487,21 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.putImageData(imageData, 0, 0);
         }
 
-        // Если включен точечный шум — генерируем его в полном разрешении для экспорта
-        if (isPerlin) {
-            const srcImgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            generateDotDithering(ctx, srcImgData, canvas.width, canvas.height);
+        let exportImgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Сохранение пикселизации высокого разрешения (адаптируется под размер файла)
+        if (isPixelated) {
+            const scaleFactor = canvas.width / uploadedImage.offsetWidth;
+            const targetSampleSize = Math.max(4, Math.round(16 * scaleFactor)); 
+            exportImgData = processPixelation(exportImgData, canvas.width, canvas.height, targetSampleSize);
         }
 
-        // Отрисовка текста
+        if (isPerlin) {
+            exportImgData = processGrainNoise(exportImgData);
+        }
+
+        ctx.putImageData(exportImgData, 0, 0);
+
         if (textContainer.style.display !== 'none' && text.trim()) {
             const scaleFactor = canvas.width / uploadedImage.offsetWidth;
             const fontSize = (textSize / 100) * 40 * scaleFactor; 
@@ -510,10 +540,7 @@ document.addEventListener('DOMContentLoaded', function() {
         mainPage.classList.add('active');
         fileInput.value = ''; 
         uploadedImage.src = '';
-        uploadedImage.style.filter = 'none';
-        isBW = false;
-        isNegative = false;
-        removeNoiseOverlay();
+        resetEffects();
         text = 'Text';
         textElement.textContent = text;
         textColor = '#ffffff';
