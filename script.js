@@ -24,7 +24,45 @@ document.addEventListener('DOMContentLoaded', function() {
     let isDragging = false; 
     let dragOffsetX, dragOffsetY;
 
-    // Контейнер для текста
+    // --- ДОБАВЛЕНИЕ КНОПКИ TELEGRAM В ПРАВЫЙ ВЕРХНИЙ УГОЛ ---
+    const tgBtn = document.createElement('button');
+    tgBtn.id = 'telegram-link-btn';
+    tgBtn.style.position = 'fixed';
+    tgBtn.style.top = '20px';
+    tgBtn.style.right = '20px';
+    tgBtn.style.width = '60px';  // Сделаем её чуть аккуратнее остальных кнопок
+    tgBtn.style.height = '60px';
+    tgBtn.style.borderRadius = '50%'; // Круглая кнопка отлично подходит для иконки ТГ
+    tgBtn.style.backgroundImage = 'url("telegram.png")';
+    tgBtn.style.backgroundSize = 'cover';
+    tgBtn.style.backgroundPosition = 'center';
+    tgBtn.style.border = '2px solid #fff';
+    tgBtn.style.cursor = 'pointer';
+    tgBtn.style.zIndex = '2000'; // Чтобы была поверх всех окон и редакторов
+    tgBtn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+    tgBtn.style.transition = 'transform 0.2s, box-shadow 0.2s';
+
+    // Эффекты при наведении
+    tgBtn.addEventListener('mouseenter', () => {
+        tgBtn.style.transform = 'scale(1.1)';
+        tgBtn.style.boxShadow = '0 6px 16px rgba(0, 136, 204, 0.6)'; // Голубое свечение в стиле ТГ
+    });
+    tgBtn.addEventListener('mouseleave', () => {
+        tgBtn.style.transform = 'scale(1)';
+        tgBtn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+    });
+
+    // Обработчик клика — открывает ссылку в новой вкладке browser'а
+    tgBtn.addEventListener('click', function() {
+        window.open('https://t.me/ONIKNews', '_blank');
+    });
+
+    // Добавляем кнопку прямо в body, чтобы position: fixed работал идеально относительно экрана
+    document.body.appendChild(tgBtn);
+
+
+    // --- ОСТАЛЬНОЙ КОД ДИНАМИЧЕСКИХ КНОПОК ---
+
     const textContainer = document.createElement('div');
     textContainer.id = 'text-container';
     textContainer.style.position = 'absolute';
@@ -58,9 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isEditing) e.preventDefault();
     });
 
-    // --- ДИНАМИЧЕСКОЕ СОЗДАНИЕ КНОПОК ---
-
-    // 1. Кнопка ТЕКСТА
     const addTextBtn = document.createElement('button');
     addTextBtn.style.backgroundImage = 'url("text.jpg")';
     addTextBtn.style.backgroundSize = 'cover';
@@ -73,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
     addTextBtn.style.transition = 'transform 0.2s';
     addTextBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
 
-    // 2. Кнопка ШУМА
     const perlinBtn = document.createElement('button');
     perlinBtn.style.backgroundImage = 'url("perlin.png")'; 
     perlinBtn.style.backgroundSize = 'cover';
@@ -86,7 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
     perlinBtn.style.transition = 'transform 0.2s';
     perlinBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
 
-    // 3. Кнопка ПИКСЕЛИЗАЦИИ (создаётся сразу в JS и загружает pixel.png)
     const pixelFilterBtn = document.createElement('button');
     pixelFilterBtn.style.backgroundImage = 'url("pixel.png")';
     pixelFilterBtn.style.backgroundSize = 'cover';
@@ -99,11 +132,9 @@ document.addEventListener('DOMContentLoaded', function() {
     pixelFilterBtn.style.transition = 'transform 0.2s';
     pixelFilterBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
 
-    // Добавляем hover-эффект для созданной кнопки
     pixelFilterBtn.addEventListener('mouseenter', () => pixelFilterBtn.style.transform = 'scale(1.1)');
     pixelFilterBtn.addEventListener('mouseleave', () => pixelFilterBtn.style.transform = 'scale(1)');
 
-    // Пушим все три кнопки в наш HTML-контейнер фильтров
     filterButtons.appendChild(addTextBtn);
     filterButtons.appendChild(perlinBtn);
     filterButtons.appendChild(pixelFilterBtn);
@@ -203,12 +234,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let currentImgData = tempCtx.getImageData(0, 0, overlay.width, overlay.height);
 
-        // 1. Применяем пикселизацию (blockSize = 16 для выразительного эффекта)
         if (isPixelated) {
             currentImgData = processPixelation(currentImgData, overlay.width, overlay.height, 16);
         }
 
-        // 2. Накладываем зернистый шум
         if (isPerlin) {
             currentImgData = processGrainNoise(currentImgData);
         }
@@ -349,7 +378,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    fn = updateTextPosition;
     function updateTextPosition() {
         if (uploadedImage.offsetWidth && uploadedImage.offsetHeight) {
             const centerX = (uploadedImage.offsetWidth - textContainer.offsetWidth) / 2;
@@ -489,7 +517,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let exportImgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        // Сохранение пикселизации высокого разрешения (адаптируется под размер файла)
         if (isPixelated) {
             const scaleFactor = canvas.width / uploadedImage.offsetWidth;
             const targetSampleSize = Math.max(4, Math.round(16 * scaleFactor)); 
