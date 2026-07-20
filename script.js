@@ -1,4 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // --- УСТАНОВКА ИКОНКИ ВКЛАДКИ (FAVICON) ---
+    let favicon = document.querySelector('link[rel="icon"]') || document.querySelector('link[rel="shortcut icon"]');
+    if (!favicon) {
+        favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        favicon.type = 'image/x-icon';
+        document.head.appendChild(favicon);
+    }
+    favicon.href = 'logo.ico';
+
+    // --- ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ СТРАНИЦЫ ---
     const mainPage = document.getElementById('main-page');
     const editorPage = document.getElementById('editor-page');
     const uploadBtn = document.getElementById('upload-btn');
