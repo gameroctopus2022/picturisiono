@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // --- ОПРЕДЕЛЕНИЕ ТИПА УСТРОЙСТВА (МОБИЛА ИЛИ ПК) ---
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
     // --- УСТАНОВКА ИКОНКИ ВКЛАДКИ (FAVICON) ---
     let favicon = document.querySelector('link[rel="icon"]') || document.querySelector('link[rel="shortcut icon"]');
     if (!favicon) {
@@ -35,14 +38,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let isDragging = false; 
     let dragOffsetX, dragOffsetY;
 
-    // --- КНОПКА TELEGRAM ---
+    // --- КНОПКА TELEGRAM (С подстройкой под устройство через JS) ---
     const tgBtn = document.createElement('button');
     tgBtn.id = 'telegram-link-btn';
     tgBtn.style.position = 'fixed';
-    tgBtn.style.top = '20px';
-    tgBtn.style.right = '20px';
-    tgBtn.style.width = '60px';  
-    tgBtn.style.height = '60px';
+    tgBtn.style.top = isMobile ? '15px' : '20px';
+    tgBtn.style.right = isMobile ? '15px' : '20px';
+    tgBtn.style.width = isMobile ? '45px' : '60px';  
+    tgBtn.style.height = isMobile ? '45px' : '60px';
     tgBtn.style.borderRadius = '50%'; 
     tgBtn.style.backgroundImage = 'url("telegram.png")';
     tgBtn.style.backgroundSize = 'cover';
@@ -78,18 +81,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.body.appendChild(notificationFrame);
 
-    // Добавляем все стили в head
+    // Добавляем стили в head с автоматической адаптивностью под мобильные/ПК
     const styleSheet = document.createElement('style');
     styleSheet.textContent = `
         #tg-notification-frame {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            height: 60px;
-            width: 60px;
+            top: ${isMobile ? '15px' : '20px'};
+            right: ${isMobile ? '15px' : '20px'};
+            height: ${isMobile ? '45px' : '60px'};
+            width: ${isMobile ? '45px' : '60px'};
             background-color: #000000;
             color: #ffffff;
-            border-radius: 30px;
+            border-radius: ${isMobile ? '22.5px' : '30px'};
             z-index: 1999; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: flex;
@@ -99,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
             pointer-events: none;
             font-family: 'Arial', sans-serif;
             font-weight: bold;
-            font-size: 16px;
+            font-size: ${isMobile ? '13px' : '16px'};
             white-space: nowrap;
             box-sizing: border-box;
             border: 1px solid rgba(255,255,255,0.1);
@@ -114,28 +117,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         @keyframes iphoneNotification {
             0% {
-                width: 60px;
-                height: 60px;
-                border-radius: 30px;
+                width: ${isMobile ? '45px' : '60px'};
+                height: ${isMobile ? '45px' : '60px'};
+                border-radius: ${isMobile ? '22.5px' : '30px'};
                 transform: translateX(0);
             }
             18% {
-                width: 280px;
-                height: 60px;
-                border-radius: 20px;
-                transform: translateX(-40px);
+                width: ${isMobile ? '230px' : '280px'};
+                height: ${isMobile ? '45px' : '60px'};
+                border-radius: ${isMobile ? '15px' : '20px'};
+                transform: translateX(${isMobile ? '-20px' : '-40px'});
             }
             82% {
-                width: 280px;
-                height: 60px;
-                border-radius: 20px;
-                transform: translateX(-40px);
+                width: ${isMobile ? '230px' : '280px'};
+                height: ${isMobile ? '45px' : '60px'};
+                border-radius: ${isMobile ? '15px' : '20px'};
+                transform: translateX(${isMobile ? '-20px' : '-40px'});
                 opacity: 1;
             }
             100% {
-                width: 60px;
-                height: 60px;
-                border-radius: 30px;
+                width: ${isMobile ? '45px' : '60px'};
+                height: ${isMobile ? '45px' : '60px'};
+                border-radius: ${isMobile ? '22.5px' : '30px'};
                 transform: translateX(0);
                 opacity: 0;
             }
