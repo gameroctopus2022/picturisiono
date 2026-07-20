@@ -24,45 +24,129 @@ document.addEventListener('DOMContentLoaded', function() {
     let isDragging = false; 
     let dragOffsetX, dragOffsetY;
 
-    // --- ДОБАВЛЕНИЕ КНОПКИ TELEGRAM В ПРАВЫЙ ВЕРХНИЙ УГОЛ ---
+    // --- КНОПКА TELEGRAM ---
     const tgBtn = document.createElement('button');
     tgBtn.id = 'telegram-link-btn';
     tgBtn.style.position = 'fixed';
     tgBtn.style.top = '20px';
     tgBtn.style.right = '20px';
-    tgBtn.style.width = '60px';  // Сделаем её чуть аккуратнее остальных кнопок
+    tgBtn.style.width = '60px';  
     tgBtn.style.height = '60px';
-    tgBtn.style.borderRadius = '50%'; // Круглая кнопка отлично подходит для иконки ТГ
+    tgBtn.style.borderRadius = '50%'; 
     tgBtn.style.backgroundImage = 'url("telegram.png")';
     tgBtn.style.backgroundSize = 'cover';
     tgBtn.style.backgroundPosition = 'center';
     tgBtn.style.border = '2px solid #fff';
     tgBtn.style.cursor = 'pointer';
-    tgBtn.style.zIndex = '2000'; // Чтобы была поверх всех окон и редакторов
+    tgBtn.style.zIndex = '2000'; 
     tgBtn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
     tgBtn.style.transition = 'transform 0.2s, box-shadow 0.2s';
 
-    // Эффекты при наведении
     tgBtn.addEventListener('mouseenter', () => {
         tgBtn.style.transform = 'scale(1.1)';
-        tgBtn.style.boxShadow = '0 6px 16px rgba(0, 136, 204, 0.6)'; // Голубое свечение в стиле ТГ
+        tgBtn.style.boxShadow = '0 6px 16px rgba(0, 136, 204, 0.6)'; 
     });
     tgBtn.addEventListener('mouseleave', () => {
         tgBtn.style.transform = 'scale(1)';
         tgBtn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
     });
 
-    // Обработчик клика — открывает ссылку в новой вкладке browser'а
     tgBtn.addEventListener('click', function() {
         window.open('https://t.me/ONIKNews', '_blank');
     });
 
-    // Добавляем кнопку прямо в body, чтобы position: fixed работал идеально относительно экрана
     document.body.appendChild(tgBtn);
 
+    // --- Dynamic Island АНИМАЦИЯ УВЕДОМЛЕНИЯ ---
+    const notificationFrame = document.createElement('div');
+    notificationFrame.id = 'tg-notification-frame';
+    
+    const notificationText = document.createElement('span');
+    notificationText.textContent = 'Мы появились в Telegram!';
+    notificationFrame.appendChild(notificationText);
+    
+    document.body.appendChild(notificationFrame);
 
-    // --- ОСТАЛЬНОЙ КОД ДИНАМИЧЕСКИХ КНОПОК ---
+    // Добавляем все стили в head
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+        #tg-notification-frame {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            height: 60px;
+            width: 60px;
+            background-color: #000000;
+            color: #ffffff;
+            border-radius: 30px;
+            z-index: 1999; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            pointer-events: none;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            font-size: 16px;
+            white-space: nowrap;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: iphoneNotification 3.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
 
+        #tg-notification-frame span {
+            opacity: 0;
+            transform: scale(0.9);
+            animation: fadeInText 3.2s ease-in-out forwards;
+        }
+
+        @keyframes iphoneNotification {
+            0% {
+                width: 60px;
+                height: 60px;
+                border-radius: 30px;
+                transform: translateX(0);
+            }
+            18% {
+                width: 280px;
+                height: 60px;
+                border-radius: 20px;
+                transform: translateX(-40px);
+            }
+            82% {
+                width: 280px;
+                height: 60px;
+                border-radius: 20px;
+                transform: translateX(-40px);
+                opacity: 1;
+            }
+            100% {
+                width: 60px;
+                height: 60px;
+                border-radius: 30px;
+                transform: translateX(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeInText {
+            0% { opacity: 0; transform: scale(0.9); }
+            15% { opacity: 0; }
+            20% { opacity: 1; transform: scale(1); } 
+            80% { opacity: 1; transform: scale(1); }
+            85% { opacity: 0; transform: scale(0.9); } 
+            100% { opacity: 0; }
+        }
+
+        @keyframes popupAppear {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(styleSheet);
+
+    // --- КОНТЕЙНЕР ДЛЯ ТЕКСТА НА КАРТИНКЕ ---
     const textContainer = document.createElement('div');
     textContainer.id = 'text-container';
     textContainer.style.position = 'absolute';
@@ -96,6 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isEditing) e.preventDefault();
     });
 
+    // --- ДИНАМИЧЕСКИЕ КНОПКИ ФИЛЬТРОВ ---
     const addTextBtn = document.createElement('button');
     addTextBtn.style.backgroundImage = 'url("text.jpg")';
     addTextBtn.style.backgroundSize = 'cover';
@@ -139,8 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
     filterButtons.appendChild(perlinBtn);
     filterButtons.appendChild(pixelFilterBtn);
 
-    // --- ЛОГИКА И ЭФФЕКТЫ ---
-
+    // --- ЛОГИКА ЗАГРУЗКИ И ОБРАБОТКИ ---
     uploadBtn.addEventListener('click', function() {
         fileInput.click();
     });
@@ -296,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadedImage.style.filter = 'none';
     }
 
+    // --- УПРАВЛЕНИЕ ТЕКСТОМ И КАСТОМИЗАЦИЯ ---
     addTextBtn.addEventListener('click', function() {
         textContainer.style.display = 'block';
         updateTextStyle(); 
@@ -490,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     }
 
+    // --- ЭКСПОРТ КАРТИНКИ С ЭФФЕКТАМИ ---
     downloadBtn.addEventListener('click', function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -577,18 +663,3 @@ document.addEventListener('DOMContentLoaded', function() {
         textContainer.style.display = 'none';
     });
 });
-
-const style = document.createElement('style');
-style.textContent = `
-@keyframes popupAppear {
-    from {
-        transform: translateX(-50%) translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(-50%) translateY(0);
-        opacity: 1;
-    }
-}
-`;
-document.head.appendChild(style);
