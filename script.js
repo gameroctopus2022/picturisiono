@@ -25,6 +25,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const backBtn = document.getElementById('back-btn');
     const filterButtons = document.getElementById('filter-buttons');
 
+    // ФИКС ОШИБКИ 2: Запрещаем зажимание и перетаскивание картинки на мобилках
+    uploadedImage.style.userSelect = 'none';
+    uploadedImage.style.webkitUserSelect = 'none';
+    uploadedImage.style.webkitTouchCallout = 'none'; // Отключает всплывающее меню "Скачать изображение" на iOS/Android
+    uploadedImage.addEventListener('dragstart', (e) => e.preventDefault());
+    uploadedImage.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // ФИКС ОШИБКИ 1: Запрещаем кнопкам Ч/Б и Негатива сплющиваться
+    [bwFilterBtn, negativeFilterBtn].forEach(btn => {
+        if (btn) {
+            btn.style.flexShrink = '0';
+            btn.style.minWidth = isMobile ? '80px' : '100px';
+        }
+    });
+
     let isBW = false;
     let isNegative = false;
     let isPerlin = false; 
@@ -38,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isDragging = false; 
     let dragOffsetX, dragOffsetY;
 
-    // --- КНОПКА TELEGRAM (С подстройкой под устройство через JS) ---
+    // --- КНОПКА TELEGRAM ---
     const tgBtn = document.createElement('button');
     tgBtn.id = 'telegram-link-btn';
     tgBtn.style.position = 'fixed';
@@ -56,15 +71,6 @@ document.addEventListener('DOMContentLoaded', function() {
     tgBtn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
     tgBtn.style.transition = 'transform 0.2s, box-shadow 0.2s';
 
-    tgBtn.addEventListener('mouseenter', () => {
-        tgBtn.style.transform = 'scale(1.1)';
-        tgBtn.style.boxShadow = '0 6px 16px rgba(0, 136, 204, 0.6)'; 
-    });
-    tgBtn.addEventListener('mouseleave', () => {
-        tgBtn.style.transform = 'scale(1)';
-        tgBtn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
-    });
-
     tgBtn.addEventListener('click', function() {
         window.open('https://t.me/ONIKNews', '_blank');
     });
@@ -81,9 +87,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.body.appendChild(notificationFrame);
 
-    // Добавляем стили в head с автоматической адаптивностью под мобильные/ПК
     const styleSheet = document.createElement('style');
     styleSheet.textContent = `
+        #filter-buttons {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
         #tg-notification-frame {
             position: fixed;
             top: ${isMobile ? '15px' : '20px'};
@@ -167,6 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
     textContainer.style.pointerEvents = 'auto';
     textContainer.style.display = 'none'; 
     textContainer.style.zIndex = '10';
+    textContainer.style.touchAction = 'none'; // Отключает стандартный скролл страницы при перетаскивании текста
     
     imageContainer.style.position = 'relative'; 
     imageContainer.appendChild(textContainer);
@@ -180,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
     textElement.style.textAlign = 'center';
     textElement.style.userSelect = 'none';
     textElement.style.webkitUserSelect = 'none';
+    textElement.style.webkitTouchCallout = 'none';
     textElement.style.cursor = 'pointer';
     textElement.style.display = 'inline-block';
     textElement.style.padding = '5px';
@@ -190,49 +205,27 @@ document.addEventListener('DOMContentLoaded', function() {
     textContainer.appendChild(textElement);
 
     textContainer.addEventListener('dragstart', (e) => e.preventDefault());
-    textContainer.addEventListener('selectstart', (e) => {
-        if (!isEditing) e.preventDefault();
-    });
+    textContainer.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // --- ДИНАМИЧЕСКИЕ КНОПКИ ФИЛЬТРОВ ---
-    const addTextBtn = document.createElement('button');
-    addTextBtn.style.backgroundImage = 'url("text.jpg")';
-    addTextBtn.style.backgroundSize = 'cover';
-    addTextBtn.style.backgroundPosition = 'center';
-    addTextBtn.style.width = '100px';
-    addTextBtn.style.height = '100px';
-    addTextBtn.style.borderRadius = '15px';
-    addTextBtn.style.border = '2px solid #fff';
-    addTextBtn.style.cursor = 'pointer';
-    addTextBtn.style.transition = 'transform 0.2s';
-    addTextBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
+    // --- ДИНАМИЧЕСКИЕ КНОПКИ ФИЛЬТРОВ С ФИКСИРОВАННЫМ РАЗМЕРОМ ---
+    const createFilterBtn = (bgUrl) => {
+        const btn = document.createElement('button');
+        btn.style.backgroundImage = `url("${bgUrl}")`;
+        btn.style.backgroundSize = 'cover';
+        btn.style.backgroundPosition = 'center';
+        btn.style.width = isMobile ? '80px' : '100px';
+        btn.style.height = isMobile ? '80px' : '100px';
+        btn.style.flexShrink = '0'; // Запрет сплющивания
+        btn.style.borderRadius = '15px';
+        btn.style.border = '2px solid #fff';
+        btn.style.cursor = 'pointer';
+        btn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
+        return btn;
+    };
 
-    const perlinBtn = document.createElement('button');
-    perlinBtn.style.backgroundImage = 'url("perlin.png")'; 
-    perlinBtn.style.backgroundSize = 'cover';
-    perlinBtn.style.backgroundPosition = 'center';
-    perlinBtn.style.width = '100px';
-    perlinBtn.style.height = '100px';
-    perlinBtn.style.borderRadius = '15px';
-    perlinBtn.style.border = '2px solid #fff';
-    perlinBtn.style.cursor = 'pointer';
-    perlinBtn.style.transition = 'transform 0.2s';
-    perlinBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
-
-    const pixelFilterBtn = document.createElement('button');
-    pixelFilterBtn.style.backgroundImage = 'url("pixel.png")';
-    pixelFilterBtn.style.backgroundSize = 'cover';
-    pixelFilterBtn.style.backgroundPosition = 'center';
-    pixelFilterBtn.style.width = '100px';
-    pixelFilterBtn.style.height = '100px';
-    pixelFilterBtn.style.borderRadius = '15px';
-    pixelFilterBtn.style.border = '2px solid #fff';
-    pixelFilterBtn.style.cursor = 'pointer';
-    pixelFilterBtn.style.transition = 'transform 0.2s';
-    pixelFilterBtn.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.3)';
-
-    pixelFilterBtn.addEventListener('mouseenter', () => pixelFilterBtn.style.transform = 'scale(1.1)');
-    pixelFilterBtn.addEventListener('mouseleave', () => pixelFilterBtn.style.transform = 'scale(1)');
+    const addTextBtn = createFilterBtn('text.jpg');
+    const perlinBtn = createFilterBtn('perlin.png');
+    const pixelFilterBtn = createFilterBtn('pixel.png');
 
     filterButtons.appendChild(addTextBtn);
     filterButtons.appendChild(perlinBtn);
@@ -349,7 +342,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         for (let y = 0; y < h; y += blockSize) {
             for (let x = 0; x < w; x += blockSize) {
-                
                 const centerX = Math.min(x + Math.floor(blockSize / 2), w - 1);
                 const centerY = Math.min(y + Math.floor(blockSize / 2), h - 1);
                 const centerIdx = (centerX + centerY * w) * 4;
@@ -394,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadedImage.style.filter = 'none';
     }
 
-    // --- УПРАВЛЕНИЕ ТЕКСТОМ И КАСТОМИЗАЦИЯ ---
+    // --- УПРАВЛЕНИЕ ТЕКСТОМ И ТАЧ-СОБЫТИЯ (ФИКС ДЛЯ МОБИЛОК) ---
     addTextBtn.addEventListener('click', function() {
         textContainer.style.display = 'block';
         updateTextStyle(); 
@@ -419,42 +411,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 isEditing = true;
                 textElement.contentEditable = 'true';
                 textElement.style.backgroundColor = 'rgba(0, 100, 255, 0.3)'; 
-                textElement.style.cursor = 'text';
                 textElement.focus();
             }
         }
     });
 
-    textElement.addEventListener('blur', function() {
-        disableEditing();
+    textElement.addEventListener('blur', disableEditing);
+    textElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); textElement.blur(); }
     });
 
-    textElement.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            textElement.blur(); 
-        }
-    });
-
-    textElement.addEventListener('mousedown', function(e) {
+    // Функция начала тача/клика
+    function startDrag(clientX, clientY) {
         if (!isEditing) {
-            e.preventDefault(); 
             isDragging = true;
-            
             const rect = textContainer.getBoundingClientRect();
-            dragOffsetX = e.clientX - rect.left;
-            dragOffsetY = e.clientY - rect.top;
-            
-            textElement.style.cursor = 'grabbing';
+            dragOffsetX = clientX - rect.left;
+            dragOffsetY = clientY - rect.top;
         }
-    });
+    }
 
-    document.addEventListener('mousemove', function(e) {
+    // Функция перетаскивания
+    function moveDrag(clientX, clientY) {
         if (isDragging) {
             const rect = uploadedImage.getBoundingClientRect(); 
-            
-            let newX = e.clientX - dragOffsetX - rect.left;
-            let newY = e.clientY - dragOffsetY - rect.top;
+            let newX = clientX - dragOffsetX - rect.left;
+            let newY = clientY - dragOffsetY - rect.top;
             
             const maxX = uploadedImage.offsetWidth - textContainer.offsetWidth;
             const maxY = uploadedImage.offsetHeight - textContainer.offsetHeight;
@@ -468,14 +450,29 @@ document.addEventListener('DOMContentLoaded', function() {
             textX = (newX / uploadedImage.offsetWidth) * 100;
             textY = (newY / uploadedImage.offsetHeight) * 100;
         }
-    });
+    }
 
-    document.addEventListener('mouseup', function() {
-        if (isDragging) {
-            isDragging = false;
-            textElement.style.cursor = 'pointer';
+    // События для мыши (ПК)
+    textElement.addEventListener('mousedown', (e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); });
+    document.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+    document.addEventListener('mouseup', () => { isDragging = false; });
+
+    // События для сенсорного экрана (Мобилки)
+    textElement.addEventListener('touchstart', (e) => {
+        if (!isEditing) {
+            const touch = e.touches[0];
+            startDrag(touch.clientX, touch.clientY);
         }
-    });
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            const touch = e.touches[0];
+            moveDrag(touch.clientX, touch.clientY);
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => { isDragging = false; });
 
     function updateTextPosition() {
         if (uploadedImage.offsetWidth && uploadedImage.offsetHeight) {
@@ -483,7 +480,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const centerY = (uploadedImage.offsetHeight - textContainer.offsetHeight) / 2;
             textContainer.style.left = centerX + 'px';
             textContainer.style.top = centerY + 'px';
-            
             textX = (centerX / uploadedImage.offsetWidth) * 100;
             textY = (centerY / uploadedImage.offsetHeight) * 100;
         }
