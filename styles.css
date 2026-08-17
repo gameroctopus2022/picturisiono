@@ -92,57 +92,55 @@ h1 {
     transition: filter 0.3s;
 }
 
-/* ИЗМЕНЕНО: Контейнер для кнопок теперь идеально центрирует всё содержимое */
+/* Контейнер для кнопок */
 #filter-buttons {
     display: flex;
-    justify-content: center;  /* Центрирует все элементы по горизонтали */
-    align-items: center;      /* Выравнивает по вертикали */
-    gap: 20px;                /* Одинаковый фиксированный зазор между ВСЕМИ кнопками */
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
     margin: 1rem 0;
     width: 100%;
+    max-width: 900px;
 }
 
+/* Общий базовый вид всех иконки-кнопок */
+#filter-buttons button {
+    width: 80px;
+    height: 80px;
+    border-radius: 15px;
+    border: 2px solid #fff;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    padding: 0;
+    margin: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.2s;
+    outline: none;
+}
+
+/* Индивидуальная логика кнопки man.png из оригинала */
 #bw-filter-btn {
-    width: 100px;
-    height: 100px;
-    border-radius: 15px;
-    background: url('man.png') no-repeat center center;
-    background-size: cover;
-    padding: 0;
-    margin: 0;                /* Убрали margin, так как теперь работает gap */
-    border: 2px solid #fff;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: transform 0.2s;
+    background-image: url('man.png') !important;
 }
 
-#bw-filter-btn:hover {
-    transform: scale(1.1);
-}
-
+/* Индивидуальная логика кнопки negative.png */
 #negative-filter-btn {
-    width: 100px;
-    height: 100px;
-    border-radius: 15px;
-    background: url('negative.png') no-repeat center center;
-    background-size: cover;
-    padding: 0;
-    margin: 0;                /* Убрали margin */
-    border: 2px solid #fff;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: transform 0.2s;
+    background-image: url('negative.png') !important;
 }
 
-#negative-filter-btn:hover {
-    transform: scale(1.1);
-}
-
-/* Эффект увеличения для кнопок, создаваемых через JS (Текст и Перлин) */
+/* Анимации при наведении и нажатии */
 #filter-buttons button:hover {
     transform: scale(1.1);
 }
 
+#filter-buttons button:active {
+    transform: scale(0.95);
+}
+
+/* Базовые стили служебных кнопок */
 button {
     margin: 0.5rem;
     padding: 0.75rem 1.5rem;
@@ -157,4 +155,17 @@ button {
 
 button:hover {
     background: #555;
+}
+
+/* Мобильная адаптивность */
+@media (max-width: 768px) {
+    #filter-buttons button {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+    }
+
+    #filter-buttons {
+        gap: 8px;
+    }
 }
