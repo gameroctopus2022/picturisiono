@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return btn;
     };
 
-    // Строгий lowercase для всех картинок!
     const bwBtn = createFilterBtn('man.png', bwFilterBtn);
     const negBtn = createFilterBtn('negative.png', negativeFilterBtn);
     const addTextBtn = createFilterBtn('text.png');         
@@ -56,7 +55,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const fogBtn = createFilterBtn('fog.png');
     const oldMoneyBtn = createFilterBtn('oldmoney.png');
 
-    // Наполняем контейнер кнопок
     filterButtons.appendChild(bwBtn);
     filterButtons.appendChild(negBtn);
     filterButtons.appendChild(addTextBtn);
@@ -71,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
     filterButtons.appendChild(fogBtn);
     filterButtons.appendChild(oldMoneyBtn);
 
-    // --- 5. СОСТОЯНИЯ ФИЛЬТРОВ И НАСТРОЕК ---
+    // --- 5. СОСТОЯНИЯ ФИЛЬТРОВ ---
     let isBW = false;
     let isNegative = false;
     let isPerlin = false; 
@@ -188,9 +186,78 @@ document.addEventListener('DOMContentLoaded', function() {
 
     borderRadiusBtn.addEventListener('click', showRadiusPicker);
 
-    // --- ИНТЕРАКТИВНОЕ КАДРИРОВАНИЕ (CROP А-ЛЯ ЯНДЕКС) ---
+    // --- 10. ИНТЕРАКТИВНОЕ КАДРИРОВАНИЕ (CROP) ---
     cropBtn.addEventListener('click', function() {
         if (document.getElementById('crop-overlay')) return;
+
+        // Внедряем динамические CSS стили для кроппера
+        if (!document.getElementById('crop-styles')) {
+            const style = document.createElement('style');
+            style.id = 'crop-styles';
+            style.textContent = `
+                #crop-overlay {
+                    position: absolute;
+                    top: 0; left: 0;
+                    width: 100%; height: 100%;
+                    z-index: 100;
+                    user-select: none;
+                    touch-action: none;
+                }
+                #crop-box {
+                    position: absolute;
+                    border: 1px solid #ffffff;
+                    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+                    box-sizing: border-box;
+                    cursor: move;
+                }
+                .crop-handle {
+                    position: absolute;
+                    width: 12px;
+                    height: 12px;
+                    background-color: #3b82f6;
+                    border: 2px solid #ffffff;
+                    border-radius: 50%;
+                    z-index: 101;
+                    box-sizing: border-box;
+                }
+                .crop-handle[data-handle="tl"] { top: -6px; left: -6px; cursor: nwse-resize; }
+                .crop-handle[data-handle="tr"] { top: -6px; right: -6px; cursor: nesw-resize; }
+                .crop-handle[data-handle="bl"] { bottom: -6px; left: -6px; cursor: nesw-resize; }
+                .crop-handle[data-handle="br"] { bottom: -6px; right: -6px; cursor: nwse-resize; }
+                .crop-handle[data-handle="tc"] { top: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+                .crop-handle[data-handle="bc"] { bottom: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+                .crop-handle[data-handle="ml"] { top: calc(50% - 6px); left: -6px; cursor: ew-resize; }
+                .crop-handle[data-handle="mr"] { top: calc(50% - 6px); right: -6px; cursor: ew-resize; }
+
+                #crop-popup {
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: min(280px, 75vw);
+                    background-color: #333333;
+                    padding: 10px 18px;
+                    border-radius: 35px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                    z-index: 1000;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .btn-crop-apply {
+                    padding: 8px 24px;
+                    border-radius: 20px;
+                    border: none;
+                    background: #4CAF50;
+                    color: white;
+                    font-weight: bold;
+                    cursor: pointer;
+                    width: 100%;
+                    font-size: 14px;
+                }
+            `;
+            document.head.appendChild(style);
+        }
 
         const cropOverlay = document.createElement('div');
         cropOverlay.id = 'crop-overlay';
@@ -198,25 +265,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const cropBox = document.createElement('div');
         cropBox.id = 'crop-box';
 
-        const actions = document.createElement('div');
-        actions.id = 'crop-actions';
-
-        const applyCropBtn = document.createElement('button');
-        applyCropBtn.textContent = 'Применить';
-        applyCropBtn.className = 'btn-crop-apply';
-
-        const cancelCropBtn = document.createElement('button');
-        cancelCropBtn.textContent = 'Отменить';
-        cancelCropBtn.className = 'btn-crop-cancel';
-
-        actions.appendChild(applyCropBtn);
-        actions.appendChild(cancelCropBtn);
-        cropBox.appendChild(actions);
-
-        const handles = ['tl', 'tc', 'tr', 'ml', 'mr', 'bl', 'bc', 'br'];
-        handles.forEach(type => {
+        // 8 синих маркеров
+        const handleTypes = ['tl', 'tr', 'bl', 'br', 'ml', 'mr', 'tc', 'bc'];
+        handleTypes.forEach(type => {
             const handle = document.createElement('div');
-            handle.className = `crop-handle ${type}`;
+            handle.className = 'crop-handle';
             handle.dataset.handle = type;
             cropBox.appendChild(handle);
         });
@@ -224,121 +277,145 @@ document.addEventListener('DOMContentLoaded', function() {
         cropOverlay.appendChild(cropBox);
         imageContainer.appendChild(cropOverlay);
 
-        const imgWidth = uploadedImage.offsetWidth;
-        const imgHeight = uploadedImage.offsetHeight;
+        // Попап-меню с кнопкой "Применить"
+        const cropPopup = document.createElement('div');
+        cropPopup.id = 'crop-popup';
 
-        let cropState = {
-            x: imgWidth * 0.1,
-            y: imgHeight * 0.1,
-            w: imgWidth * 0.8,
-            h: imgHeight * 0.8
+        const applyCropBtn = document.createElement('button');
+        applyCropBtn.textContent = 'Применить';
+        applyCropBtn.className = 'btn-crop-apply';
+
+        cropPopup.appendChild(applyCropBtn);
+        document.body.appendChild(cropPopup);
+
+        const imgW = uploadedImage.offsetWidth;
+        const imgH = uploadedImage.offsetHeight;
+
+        let crop = {
+            x: imgW * 0.05,
+            y: imgH * 0.05,
+            w: imgW * 0.9,
+            h: imgH * 0.9
         };
 
-        function updateCropBoxUI() {
-            cropBox.style.left = cropState.x + 'px';
-            cropBox.style.top = cropState.y + 'px';
-            cropBox.style.width = cropState.w + 'px';
-            cropBox.style.height = cropState.h + 'px';
+        function renderBox() {
+            cropBox.style.left = crop.x + 'px';
+            cropBox.style.top = crop.y + 'px';
+            cropBox.style.width = crop.w + 'px';
+            cropBox.style.height = crop.h + 'px';
         }
-        updateCropBoxUI();
+        renderBox();
 
         let activeHandle = null;
-        let isDraggingBox = false;
-        let startX, startY, startState;
+        let isDragging = false;
+        let startX = 0, startY = 0, startCrop = { ...crop };
 
-        const handleStart = (clientX, clientY, target) => {
-            if (target.classList.contains('crop-handle')) {
-                activeHandle = target.dataset.handle;
-            } else if (target === cropBox || cropBox.contains(target)) {
-                if (target !== applyCropBtn && target !== cancelCropBtn) {
-                    isDraggingBox = true;
-                }
+        function onPointerDown(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            if (e.target.classList.contains('crop-handle')) {
+                activeHandle = e.target.dataset.handle;
+            } else if (e.target === cropBox) {
+                isDragging = true;
             } else {
-                return false;
+                return;
             }
+
             startX = clientX;
             startY = clientY;
-            startState = { ...cropState };
-            return true;
-        };
+            startCrop = { ...crop };
+            e.preventDefault();
+        }
 
-        const handleMove = (clientX, clientY) => {
-            if (!activeHandle && !isDraggingBox) return;
+        function onPointerMove(e) {
+            if (!activeHandle && !isDragging) return;
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
             const dx = clientX - startX;
             const dy = clientY - startY;
 
-            if (isDraggingBox) {
-                cropState.x = Math.max(0, Math.min(startState.x + dx, imgWidth - cropState.w));
-                cropState.y = Math.max(0, Math.min(startState.y + dy, imgHeight - cropState.h));
+            if (isDragging) {
+                crop.x = Math.max(0, Math.min(startCrop.x + dx, imgW - crop.w));
+                crop.y = Math.max(0, Math.min(startCrop.y + dy, imgH - crop.h));
             } else if (activeHandle) {
                 const minSize = 30;
 
-                if (activeHandle.includes('r')) {
-                    cropState.w = Math.max(minSize, Math.min(startState.w + dx, imgWidth - startState.x));
-                }
-                if (activeHandle.includes('l')) {
-                    const newW = Math.max(minSize, startState.w - dx);
-                    if (newW !== minSize) {
-                        cropState.x = startState.x + dx;
-                        cropState.w = newW;
-                    }
-                }
-                if (activeHandle.includes('b')) {
-                    cropState.h = Math.max(minSize, Math.min(startState.h + dy, imgHeight - startState.y));
-                }
-                if (activeHandle.includes('t')) {
-                    const newH = Math.max(minSize, startState.h - dy);
-                    if (newH !== minSize) {
-                        cropState.y = startState.y + dy;
-                        cropState.h = newH;
-                    }
+                // Угловые: расширение по двум осям
+                if (activeHandle === 'tl') {
+                    const newW = Math.max(minSize, Math.min(startCrop.w - dx, startCrop.x + startCrop.w));
+                    const newH = Math.max(minSize, Math.min(startCrop.h - dy, startCrop.y + startCrop.h));
+                    crop.x = startCrop.x + (startCrop.w - newW);
+                    crop.y = startCrop.y + (startCrop.h - newH);
+                    crop.w = newW;
+                    crop.h = newH;
+                } else if (activeHandle === 'tr') {
+                    crop.w = Math.max(minSize, Math.min(startCrop.w + dx, imgW - startCrop.x));
+                    const newH = Math.max(minSize, Math.min(startCrop.h - dy, startCrop.y + startCrop.h));
+                    crop.y = startCrop.y + (startCrop.h - newH);
+                    crop.h = newH;
+                } else if (activeHandle === 'bl') {
+                    const newW = Math.max(minSize, Math.min(startCrop.w - dx, startCrop.x + startCrop.w));
+                    crop.x = startCrop.x + (startCrop.w - newW);
+                    crop.w = newW;
+                    crop.h = Math.max(minSize, Math.min(startCrop.h + dy, imgH - startCrop.y));
+                } else if (activeHandle === 'br') {
+                    crop.w = Math.max(minSize, Math.min(startCrop.w + dx, imgW - startCrop.x));
+                    crop.h = Math.max(minSize, Math.min(startCrop.h + dy, imgH - startCrop.y));
+                } 
+                // Сторонние: строго вдоль одной оси
+                else if (activeHandle === 'ml') { // Левая сторона -> влево-вправо
+                    const newW = Math.max(minSize, Math.min(startCrop.w - dx, startCrop.x + startCrop.w));
+                    crop.x = startCrop.x + (startCrop.w - newW);
+                    crop.w = newW;
+                } else if (activeHandle === 'mr') { // Правая сторона -> влево-вправо
+                    crop.w = Math.max(minSize, Math.min(startCrop.w + dx, imgW - startCrop.x));
+                } else if (activeHandle === 'tc') { // Верхняя сторона -> вверх-вниз
+                    const newH = Math.max(minSize, Math.min(startCrop.h - dy, startCrop.y + startCrop.h));
+                    crop.y = startCrop.y + (startCrop.h - newH);
+                    crop.h = newH;
+                } else if (activeHandle === 'bc') { // Нижняя сторона -> вверх-вниз
+                    crop.h = Math.max(minSize, Math.min(startCrop.h + dy, imgH - startCrop.y));
                 }
             }
-            updateCropBoxUI();
-        };
+            renderBox();
+        }
 
-        cropOverlay.addEventListener('mousedown', (e) => {
-            if (handleStart(e.clientX, e.clientY, e.target)) e.preventDefault();
-        });
+        function onPointerUp() {
+            activeHandle = null;
+            isDragging = false;
+        }
 
-        window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-        window.addEventListener('mouseup', () => { activeHandle = null; isDraggingBox = false; });
+        cropOverlay.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
 
-        cropOverlay.addEventListener('touchstart', (e) => {
-            const touch = e.touches[0];
-            if (handleStart(touch.clientX, touch.clientY, e.target)) e.preventDefault();
-        }, { passive: false });
-
-        window.addEventListener('touchmove', (e) => {
-            if (activeHandle || isDraggingBox) {
-                const touch = e.touches[0];
-                handleMove(touch.clientX, touch.clientY);
-            }
-        });
-
-        window.addEventListener('touchend', () => { activeHandle = null; isDraggingBox = false; });
-
-        cancelCropBtn.addEventListener('click', () => cropOverlay.remove());
+        cropOverlay.addEventListener('touchstart', onPointerDown, { passive: false });
+        window.addEventListener('touchmove', onPointerMove, { passive: false });
+        window.addEventListener('touchend', onPointerUp);
 
         applyCropBtn.addEventListener('click', () => {
-            const scaleX = uploadedImage.naturalWidth / imgWidth;
-            const scaleY = uploadedImage.naturalHeight / imgHeight;
+            const scaleX = uploadedImage.naturalWidth / imgW;
+            const scaleY = uploadedImage.naturalHeight / imgH;
 
-            const cropX = cropState.x * scaleX;
-            const cropY = cropState.y * scaleY;
-            const cropW = cropState.w * scaleX;
-            const cropH = cropState.h * scaleY;
+            const realX = crop.x * scaleX;
+            const realY = crop.y * scaleY;
+            const realW = crop.w * scaleX;
+            const realH = crop.h * scaleY;
 
             const canvas = document.createElement('canvas');
-            canvas.width = cropW;
-            canvas.height = cropH;
+            canvas.width = realW;
+            canvas.height = realH;
 
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(uploadedImage, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            ctx.drawImage(uploadedImage, realX, realY, realW, realH, 0, 0, realW, realH);
 
             uploadedImage.src = canvas.toDataURL('image/png');
             cropOverlay.remove();
+            cropPopup.remove();
+
             applyAllEffects();
         });
     });
@@ -398,7 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadedImage.style.opacity = (isPixelated || isHDR || isOldFilm || isGlitch || isFog || isOldMoney) ? '0' : '1';
     }
 
-    // --- 10. АЛГОРИТМЫ ЭФФЕКТОВ ---
+    // --- 11. АЛГОРИТМЫ ЭФФЕКТОВ ---
     function processPixelation(imgData, w, h, blockSize = 16) {
         const data = imgData.data;
         for (let y = 0; y < h; y += blockSize) {
@@ -505,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(0, 0, w, h);
     }
 
-    // --- 11. ПОПАП ЗАКРУГЛЕНИЯ УГЛОВ (circle.png) ---
+    // --- 12. ПОПАП ЗАКРУГЛЕНИЯ УГЛОВ (circle.png) ---
     function showRadiusPicker() {
         if (document.getElementById('radius-popup')) return;
 
@@ -556,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(popup);
     }
 
-    // --- 12. ТЕКСТ И НАСТРОЙКА ТЕКСТА (text.png) ---
+    // --- 13. ТЕКСТ И НАСТРОЙКА ТЕКСТА (text.png) ---
     addTextBtn.addEventListener('click', function() {
         textContainer.style.display = 'block';
         updateTextStyle(); 
@@ -752,7 +829,7 @@ document.addEventListener('DOMContentLoaded', function() {
         applyBtn.addEventListener('click', () => colorPopup.remove());
     }
 
-    // --- 13. СКАЧИВАНИЕ ИЗОБРАЖЕНИЯ ---
+    // --- 14. СКАЧИВАНИЕ ИЗОБРАЖЕНИЯ ---
     downloadBtn.addEventListener('click', function() {
         let canvas = document.createElement('canvas');
         let ctx = canvas.getContext('2d');
@@ -836,7 +913,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // --- 14. СБРОС ЭФФЕКТОВ И ВОЗВРАТ ---
+    // --- 15. СБРОС ЭФФЕКТОВ И ВОЗВРАТ ---
     function resetEffects() {
         const overlay = document.getElementById('perlin-canvas-overlay');
         if (overlay) overlay.remove();
