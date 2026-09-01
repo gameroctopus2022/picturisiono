@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // --- ДИНАМИЧЕСКАЯ УСТАНОВКА ФАВИКОНКИ LOGO.ICO ---
+    let favicon = document.querySelector("link[rel*='icon']");
+    if (!favicon) {
+        favicon = document.createElement('link');
+        favicon.rel = 'shortcut icon';
+        favicon.type = 'image/x-icon';
+        document.head.appendChild(favicon);
+    }
+    favicon.href = 'logo.ico';
+
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
     const mainPage = document.getElementById('main-page');
@@ -20,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (imageWrapper) {
         imageWrapper.style.position = 'relative';
         imageWrapper.style.display = 'inline-block';
+        imageWrapper.addEventListener('dragstart', (e) => e.preventDefault());
     }
 
     if (uploadedImage) {
@@ -42,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
     tgBtn.style.backgroundPosition = 'center';
     tgBtn.style.border = 'none';
     tgBtn.style.cursor = 'pointer';
-    tgBtn.style.zIndex = '2000'; 
+    tgBtn.style.zIndex = '3000'; 
     tgBtn.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.4)';
     tgBtn.addEventListener('click', () => window.open('https://t.me/ONIKNews', '_blank'));
     document.body.appendChild(tgBtn);
@@ -106,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const filterButtonsContainer = document.createElement('div');
     filterButtonsContainer.style.display = 'grid';
-    filterButtonsContainer.style.gridTemplateColumns = isMobile ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)';
+    filterButtonsContainer.style.gridTemplateColumns = isMobile ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)';
     filterButtonsContainer.style.gap = '12px';
     filterButtonsContainer.style.width = '100%';
     subPanel.appendChild(filterButtonsContainer);
@@ -216,14 +227,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const popup = document.createElement('div');
         popup.id = 'intensity-popup';
         popup.style.position = 'fixed';
-        popup.style.bottom = isMobile ? '85px' : '20px';
+        popup.style.bottom = isMobile ? '95px' : '20px';
         popup.style.left = '50%';
         popup.style.transform = 'translateX(-50%)';
         popup.style.backgroundColor = '#333333';
         popup.style.padding = '12px 24px';
         popup.style.borderRadius = '35px';
         popup.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
-        popup.style.zIndex = '1000';
+        popup.style.zIndex = '4000';
         popup.style.display = 'flex';
         popup.style.alignItems = 'center';
         popup.style.gap = '15px';
@@ -299,38 +310,54 @@ document.addEventListener('DOMContentLoaded', function() {
     textElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
     textContainer.appendChild(textElement);
 
-    uploadBtn.addEventListener('click', () => fileInput.click());
+    if (uploadBtn && fileInput) {
+        uploadBtn.addEventListener('click', () => fileInput.click());
 
-    fileInput.addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                uploadedImage.src = e.target.result;
-                uploadedImage.onload = function() {
-                    mainPage.classList.remove('active');
-                    editorPage.classList.add('active');
-                    resetEffects();
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedImage.src = e.target.result;
+                    uploadedImage.onload = function() {
+                        mainPage.classList.remove('active');
+                        editorPage.classList.add('active');
+                        resetEffects();
+                    };
                 };
-            };
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    sidebarButtons['btn-circle'].addEventListener('click', () => {
+        const isActive = sidebarButtons['btn-circle'].classList.contains('active');
+        if (isActive) {
+            setActiveSidebarButton(null);
+            const popup = document.getElementById('radius-popup');
+            if (popup) popup.remove();
+        } else {
+            setActiveSidebarButton('btn-circle');
+            subPanel.classList.remove('active');
+            showRadiusPicker();
         }
     });
 
-    sidebarButtons['btn-circle'].addEventListener('click', () => {
-        setActiveSidebarButton('btn-circle');
-        subPanel.classList.remove('active');
-        showRadiusPicker();
-    });
-
     sidebarButtons['btn-text'].addEventListener('click', () => {
-        setActiveSidebarButton('btn-text');
-        subPanel.classList.remove('active');
-        
-        textContainer.style.display = 'block';
-        updateTextStyle();
-        setTimeout(updateTextPosition, 50);
-        showColorPicker();
+        const isActive = sidebarButtons['btn-text'].classList.contains('active');
+        if (isActive) {
+            setActiveSidebarButton(null);
+            const popup = document.getElementById('color-popup');
+            if (popup) popup.remove();
+        } else {
+            setActiveSidebarButton('btn-text');
+            subPanel.classList.remove('active');
+            
+            textContainer.style.display = 'block';
+            updateTextStyle();
+            setTimeout(updateTextPosition, 50);
+            showColorPicker();
+        }
     });
 
     function disableEditing() {
@@ -423,14 +450,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const colorPopup = document.createElement('div');
         colorPopup.id = 'color-popup';
         colorPopup.style.position = 'fixed';
-        colorPopup.style.bottom = isMobile ? '85px' : '20px';
+        colorPopup.style.bottom = isMobile ? '95px' : '20px';
         colorPopup.style.left = '50%';
         colorPopup.style.transform = 'translateX(-50%)';
         colorPopup.style.backgroundColor = '#333333';
         colorPopup.style.padding = '12px 24px';
         colorPopup.style.borderRadius = '35px';
         colorPopup.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
-        colorPopup.style.zIndex = '1000';
+        colorPopup.style.zIndex = '4000';
         colorPopup.style.display = 'flex';
         colorPopup.style.alignItems = 'center';
         colorPopup.style.gap = '15px';
@@ -496,14 +523,26 @@ document.addEventListener('DOMContentLoaded', function() {
         colorPopup.appendChild(applyBtn);
 
         document.body.appendChild(colorPopup);
-        applyBtn.addEventListener('click', () => colorPopup.remove());
+        applyBtn.addEventListener('click', () => {
+            colorPopup.remove();
+            setActiveSidebarButton(null);
+        });
     }
 
     // --- CROP ---
     sidebarButtons['btn-crop'].addEventListener('click', () => {
-        setActiveSidebarButton('btn-crop');
-        subPanel.classList.remove('active');
-        initInteractiveCrop();
+        const isActive = sidebarButtons['btn-crop'].classList.contains('active');
+        if (isActive) {
+            setActiveSidebarButton(null);
+            const overlay = document.getElementById('crop-overlay');
+            const popup = document.getElementById('crop-popup');
+            if (overlay) overlay.remove();
+            if (popup) popup.remove();
+        } else {
+            setActiveSidebarButton('btn-crop');
+            subPanel.classList.remove('active');
+            initInteractiveCrop();
+        }
     });
 
     function initInteractiveCrop() {
@@ -524,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .crop-handle[data-handle="bc"] { bottom: -6px; left: calc(50% - 6px); cursor: ns-resize; }
                 .crop-handle[data-handle="ml"] { top: calc(50% - 6px); left: -6px; cursor: ew-resize; }
                 .crop-handle[data-handle="mr"] { top: calc(50% - 6px); right: -6px; cursor: ew-resize; }
-                #crop-popup { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #333333; padding: 10px 18px; border-radius: 35px; z-index: 1000; }
+                #crop-popup { position: fixed; bottom: ${isMobile ? '95px' : '20px'}; left: 50%; transform: translateX(-50%); background-color: #333333; padding: 10px 18px; border-radius: 35px; z-index: 4000; }
                 .btn-crop-apply { padding: 8px 24px; border-radius: 20px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; }
             `;
             document.head.appendChild(style);
@@ -663,6 +702,7 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadedImage.onload = () => {
                 cropOverlay.remove();
                 cropPopup.remove();
+                setActiveSidebarButton(null);
                 applyAllEffects();
                 
                 if (textContainer.style.display !== 'none') {
@@ -678,8 +718,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     sidebarButtons['btn-effects'].addEventListener('click', () => {
-        setActiveSidebarButton('btn-effects');
-        subPanel.classList.toggle('active');
+        const isActive = sidebarButtons['btn-effects'].classList.contains('active');
+        if (isActive) {
+            setActiveSidebarButton(null);
+            subPanel.classList.remove('active');
+        } else {
+            setActiveSidebarButton('btn-effects');
+            subPanel.classList.add('active');
+        }
     });
 
     function applyAllEffects() {
@@ -875,13 +921,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const popup = document.createElement('div');
         popup.id = 'radius-popup';
         popup.style.position = 'fixed';
-        popup.style.bottom = isMobile ? '85px' : '20px';
+        popup.style.bottom = isMobile ? '95px' : '20px';
         popup.style.left = '50%';
         popup.style.transform = 'translateX(-50%)';
         popup.style.backgroundColor = '#333';
         popup.style.padding = '15px 20px';
         popup.style.borderRadius = '35px';
-        popup.style.zIndex = '1000';
+        popup.style.zIndex = '4000';
         popup.style.display = 'flex';
         popup.style.alignItems = 'center';
         popup.style.gap = '10px';
@@ -907,7 +953,10 @@ document.addEventListener('DOMContentLoaded', function() {
         closeBtn.style.background = '#3b82f6';
         closeBtn.style.color = 'white';
         closeBtn.style.fontWeight = 'bold';
-        closeBtn.addEventListener('click', () => popup.remove());
+        closeBtn.addEventListener('click', () => {
+            popup.remove();
+            setActiveSidebarButton(null);
+        });
 
         popup.appendChild(input);
         popup.appendChild(closeBtn);
@@ -915,76 +964,78 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- СКАЧИВАНИЕ ИЗОБРАЖЕНИЯ ---
-    downloadBtn.addEventListener('click', function() {
-        if (!uploadedImage.src) return;
-        
-        const exportCanvas = document.createElement('canvas');
-        const exportCtx = exportCanvas.getContext('2d');
-
-        exportCanvas.width = uploadedImage.naturalWidth;
-        exportCanvas.height = uploadedImage.naturalHeight;
-
-        let filter = '';
-        const intensityFactor = effectIntensity / 100;
-
-        if (activeEffect === 'bw') {
-            filter = `grayscale(${100 * intensityFactor}%)`;
-        } else if (activeEffect === 'negative') {
-            filter = `invert(${100 * intensityFactor}%)`;
-        } else if (activeEffect === 'blur') {
-            filter = `blur(${8 * intensityFactor}px)`;
-        }
-
-        if (filter) exportCtx.filter = filter;
-
-        exportCtx.drawImage(uploadedImage, 0, 0);
-
-        const canvasEffects = ['perlin', 'pixel', 'hdr', 'oldfilm', 'glitch', 'fog', 'oldmoney', 'radioactive'];
-
-        if (canvasEffects.includes(activeEffect) && intensityFactor > 0) {
-            let imgData = exportCtx.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+            if (!uploadedImage.src) return;
             
-            if (activeEffect === 'pixel') {
-                const blockSize = Math.max(1, Math.floor(24 * intensityFactor));
-                imgData = processPixelation(imgData, exportCanvas.width, exportCanvas.height, blockSize);
-            } else if (activeEffect === 'perlin') {
-                imgData = processGrainNoise(imgData, intensityFactor);
-            } else if (activeEffect === 'hdr') {
-                imgData = processHDR(imgData, intensityFactor);
-            } else if (activeEffect === 'oldmoney') {
-                imgData = processOldMoney(imgData, intensityFactor);
-            } else if (activeEffect === 'radioactive') {
-                imgData = processRadioactive(imgData, exportCanvas.width, exportCanvas.height, intensityFactor);
+            const exportCanvas = document.createElement('canvas');
+            const exportCtx = exportCanvas.getContext('2d');
+
+            exportCanvas.width = uploadedImage.naturalWidth;
+            exportCanvas.height = uploadedImage.naturalHeight;
+
+            let filter = '';
+            const intensityFactor = effectIntensity / 100;
+
+            if (activeEffect === 'bw') {
+                filter = `grayscale(${100 * intensityFactor}%)`;
+            } else if (activeEffect === 'negative') {
+                filter = `invert(${100 * intensityFactor}%)`;
+            } else if (activeEffect === 'blur') {
+                filter = `blur(${8 * intensityFactor}px)`;
             }
 
-            exportCtx.putImageData(imgData, 0, 0);
+            if (filter) exportCtx.filter = filter;
 
-            if (activeEffect === 'oldfilm') applyOldFilmCanvas(exportCtx, exportCanvas.width, exportCanvas.height, intensityFactor);
-            if (activeEffect === 'glitch') applyGlitchCanvas(exportCtx, exportCanvas.width, exportCanvas.height, intensityFactor);
-            if (activeEffect === 'fog') applyFogCanvas(exportCtx, exportCanvas.width, exportCanvas.height, intensityFactor);
-        }
+            exportCtx.drawImage(uploadedImage, 0, 0);
 
-        if (textContainer.style.display !== 'none' && text.trim()) {
-            const scaleFactor = exportCanvas.width / uploadedImage.offsetWidth;
-            const fontSize = (textSize / 100) * 40 * scaleFactor;
+            const canvasEffects = ['perlin', 'pixel', 'hdr', 'oldfilm', 'glitch', 'fog', 'oldmoney', 'radioactive'];
 
-            exportCtx.font = `bold ${fontSize}px ${selectedFont}`;
-            exportCtx.fillStyle = textColor;
-            exportCtx.textAlign = 'left';
-            exportCtx.textBaseline = 'top';
+            if (canvasEffects.includes(activeEffect) && intensityFactor > 0) {
+                let imgData = exportCtx.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
+                
+                if (activeEffect === 'pixel') {
+                    const blockSize = Math.max(1, Math.floor(24 * intensityFactor));
+                    imgData = processPixelation(imgData, exportCanvas.width, exportCanvas.height, blockSize);
+                } else if (activeEffect === 'perlin') {
+                    imgData = processGrainNoise(imgData, intensityFactor);
+                } else if (activeEffect === 'hdr') {
+                    imgData = processHDR(imgData, intensityFactor);
+                } else if (activeEffect === 'oldmoney') {
+                    imgData = processOldMoney(imgData, intensityFactor);
+                } else if (activeEffect === 'radioactive') {
+                    imgData = processRadioactive(imgData, exportCanvas.width, exportCanvas.height, intensityFactor);
+                }
 
-            const htmlPadding = 5 * scaleFactor;
-            const x = ((textX / 100) * exportCanvas.width) + htmlPadding;
-            const y = ((textY / 100) * exportCanvas.height) + htmlPadding;
+                exportCtx.putImageData(imgData, 0, 0);
 
-            exportCtx.fillText(text, x, y);
-        }
+                if (activeEffect === 'oldfilm') applyOldFilmCanvas(exportCtx, exportCanvas.width, exportCanvas.height, intensityFactor);
+                if (activeEffect === 'glitch') applyGlitchCanvas(exportCtx, exportCanvas.width, exportCanvas.height, intensityFactor);
+                if (activeEffect === 'fog') applyFogCanvas(exportCtx, exportCanvas.width, exportCanvas.height, intensityFactor);
+            }
 
-        const link = document.createElement('a');
-        link.download = 'edited-image.png';
-        link.href = exportCanvas.toDataURL('image/png');
-        link.click();
-    });
+            if (textContainer.style.display !== 'none' && text.trim()) {
+                const scaleFactor = exportCanvas.width / uploadedImage.offsetWidth;
+                const fontSize = (textSize / 100) * 40 * scaleFactor;
+
+                exportCtx.font = `bold ${fontSize}px ${selectedFont}`;
+                exportCtx.fillStyle = textColor;
+                exportCtx.textAlign = 'left';
+                exportCtx.textBaseline = 'top';
+
+                const htmlPadding = 5 * scaleFactor;
+                const x = ((textX / 100) * exportCanvas.width) + htmlPadding;
+                const y = ((textY / 100) * exportCanvas.height) + htmlPadding;
+
+                exportCtx.fillText(text, x, y);
+            }
+
+            const link = document.createElement('a');
+            link.download = 'edited-image.png';
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        });
+    }
 
     function resetEffects() {
         const overlay = document.getElementById('perlin-canvas-overlay');
@@ -993,6 +1044,8 @@ document.addEventListener('DOMContentLoaded', function() {
         removeIntensityPopup();
         const colorPopup = document.getElementById('color-popup');
         if (colorPopup) colorPopup.remove();
+        const radiusPopup = document.getElementById('radius-popup');
+        if (radiusPopup) radiusPopup.remove();
 
         activeEffect = 'none';
         effectIntensity = 100;
@@ -1008,11 +1061,13 @@ document.addEventListener('DOMContentLoaded', function() {
         setActiveSidebarButton(null);
     }
 
-    backBtn.addEventListener('click', function() {
-        editorPage.classList.remove('active');
-        mainPage.classList.add('active');
-        fileInput.value = ''; 
-        uploadedImage.src = '';
-        resetEffects();
-    });
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            editorPage.classList.remove('active');
+            mainPage.classList.add('active');
+            if (fileInput) fileInput.value = ''; 
+            uploadedImage.src = '';
+            resetEffects();
+        });
+    }
 });
