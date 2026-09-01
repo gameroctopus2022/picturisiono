@@ -1,171 +1,341 @@
-/* Modern styles with animations */
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+* {
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    height: 100vh;
+    box-sizing: border-box;
 }
 
-.page {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
+body, html {
     width: 100%;
     height: 100%;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+}
+
+/* --- СТРАНИЦЫ --- */
+.page {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
 }
 
 .page.active {
     display: flex;
 }
 
+/* --- 1. ГЛАВНАЯ СТРАНИЦА (HELLO) --- */
 #main-page {
-    background: linear-gradient(45deg, #000, #fff, #000, #fff);
-    background-size: 400% 400%;
-    animation: gradientShift 4s ease infinite;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    background: #1c1c1c;
+    z-index: 10;
 }
 
-@keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-h1 {
-    color: white;
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+#main-page h1 {
+    font-size: 3rem;
+    font-weight: 700;
 }
 
 #upload-btn {
-    background: linear-gradient(45deg, #00bcd4, #0097a7, #00bcd4, #0097a7);
-    background-size: 400% 400%;
-    animation: buttonShift 3s ease infinite;
+    padding: 14px 36px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #3b82f6;
     border: none;
-    color: white;
-    padding: 1rem 2rem;
-    font-size: 1.2rem;
-    border-radius: 50px;
+    border-radius: 30px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 188, 212, 0.3);
-    transition: transform 0.2s;
-}
-
-@keyframes buttonShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+    transition: transform 0.15s, background-color 0.2s;
 }
 
 #upload-btn:hover {
-    transform: scale(1.05);
+    background-color: #2563eb;
+    transform: scale(1.03);
 }
 
+/* --- СКРЫТИЕ ИНСТРУМЕНТОВ НА СТАРТОВОМ ЭКРАНЕ --- */
+#sidebar-tools,
+#sub-panel {
+    display: none !important;
+}
+
+#telegram-link-btn {
+    display: block !important;
+}
+
+#tg-notification-frame {
+    display: flex !important;
+}
+
+/* --- 2. СТРАНИЦА РЕДАКТОРА --- */
 #editor-page {
-    background: linear-gradient(45deg, #000, #fff, #000, #fff);
-    background-size: 400% 400%;
-    animation: gradientShift 4s ease infinite;
-    flex-direction: column;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+}
+
+#editor-page.active #sidebar-tools {
+    display: flex !important;
 }
 
 #image-container {
-    position: relative;
-    margin: 2rem;
-    border: 5px solid #333;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
-    max-width: 80vw;
-    max-height: 60vh;
-}
-
-#uploaded-image {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    transition: filter 0.3s;
-}
-
-/* Контейнер для кнопок */
-#filter-buttons {
+    flex: 1;
+    margin-left: 160px;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin: 1rem 0;
-    width: 100%;
-    max-width: 900px;
+    position: relative;
+    padding: 40px 40px 180px 40px;
+    overflow: hidden;
 }
 
-/* Общий базовый вид всех иконки-кнопок */
-#filter-buttons button {
-    width: 80px;
-    height: 80px;
-    border-radius: 15px;
-    border: 2px solid #fff;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    padding: 0;
-    margin: 0;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: transform 0.2s;
-    outline: none;
+#image-wrapper {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    max-height: 100%;
 }
 
-/* Индивидуальная логика кнопки man.png из оригинала */
-#bw-filter-btn {
-    background-image: url('man.png') !important;
+#uploaded-image {
+    max-width: 100%;
+    max-height: 65vh;
+    display: block;
+    object-fit: contain;
+    transition: filter 0.2s ease;
 }
 
-/* Индивидуальная логика кнопки negative.png */
-#negative-filter-btn {
-    background-image: url('negative.png') !important;
+/* --- КНОПКИ УПРАВЛЕНИЯ В РЕДАКТОРЕ (СНИЗУ СПРАВА) --- */
+#back-btn, #download-btn {
+    display: none;
+    position: fixed !important;
+    right: 40px !important;
+    left: auto !important;
+    width: 160px !important;
+    height: 160px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    background-color: transparent !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    cursor: pointer !important;
+    z-index: 3000 !important;
+    font-size: 0 !important;
+    color: transparent !important;
+    padding: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
-/* Анимации при наведении и нажатии */
-#filter-buttons button:hover {
-    transform: scale(1.1);
+#back-btn::before, #back-btn::after,
+#download-btn::before, #download-btn::after {
+    display: none !important;
+    content: none !important;
 }
 
-#filter-buttons button:active {
+#editor-page.active #back-btn,
+#editor-page.active #download-btn {
+    display: block !important;
+}
+
+/* DOWNLOAD (снизу) */
+#download-btn {
+    bottom: 30px !important;
+    top: auto !important;
+    background-image: url('download.png') !important;
+}
+
+/* BACK (над кнопкой DOWNLOAD) */
+#back-btn {
+    bottom: 200px !important;
+    top: auto !important;
+    background-image: url('back.png') !important;
+}
+
+#back-btn:hover, #download-btn:hover {
+    transform: scale(1.08);
+    opacity: 0.9;
+}
+
+#back-btn:active, #download-btn:active {
     transform: scale(0.95);
 }
 
-/* Базовые стили служебных кнопок */
-button {
-    margin: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
+/* --- БОКОВАЯ ПАНЕЛЬ (160px) --- */
+#sidebar-tools {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 160px;
+    height: 100vh;
+    background-color: #121212;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 25px;
+    gap: 20px;
+    z-index: 1000;
+    border-right: 1px solid #242424;
+}
+
+.sidebar-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 135px;
+    height: 120px;
+    background: transparent;
     border: none;
-    border-radius: 25px;
     cursor: pointer;
-    background: #333;
-    color: white;
-    transition: background 0.3s, transform 0.2s;
+    border-radius: 16px;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+    padding: 10px;
 }
 
-button:hover {
-    background: #555;
+.sidebar-btn:hover { 
+    background-color: #222222; 
+    transform: scale(1.03);
 }
 
-/* Мобильная адаптивность */
+.sidebar-btn-icon {
+    width: 48px;
+    height: 48px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.sidebar-btn-text {
+    color: #a0a0a0;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.sidebar-btn.active { background-color: #2a2a2a; }
+.sidebar-btn.active .sidebar-btn-icon { filter: invert(100%); }
+.sidebar-btn.active .sidebar-btn-text { color: #ffffff; font-weight: bold; }
+
+/* --- ПОДПАНЕЛЬ ЭФФЕКТОВ (360px) --- */
+#sub-panel {
+    position: fixed;
+    top: 0;
+    left: 160px;
+    width: 360px;
+    height: 100vh;
+    background-color: #1c1c1c;
+    z-index: 999;
+    flex-direction: column;
+    padding: 85px 16px 20px 16px;
+    border-right: 1px solid #2c2c2c;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+#sub-panel.active { display: flex !important; }
+
+.effect-card {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #222222;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.1s;
+    box-sizing: border-box;
+}
+
+.effect-card:hover {
+    border-color: #3b82f6;
+    transform: scale(1.02);
+}
+
+/* --- TELEGRAM БЛОК --- */
+#tg-notification-frame {
+    position: fixed;
+    top: 17px;
+    right: 70px;
+    background-color: rgba(35, 45, 40, 0.85);
+    border: 1px solid #2e7d5a;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    z-index: 1999;
+    color: #ffffff;
+    pointer-events: none;
+    align-items: center;
+}
+
+/* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
-    #filter-buttons button {
-        width: 50px;
-        height: 50px;
-        border-radius: 10px;
+    #image-container { 
+        margin-left: 0; 
+        padding: 60px 10px 180px 10px;
+    }
+    #uploaded-image {
+        max-height: 55vh;
+    }
+    #download-btn { 
+        right: 15px !important; 
+        width: 80px !important; 
+        height: 80px !important; 
+        bottom: 100px !important;
+    }
+    #back-btn { 
+        right: 15px !important; 
+        width: 80px !important; 
+        height: 80px !important; 
+        bottom: 190px !important;
+    }
+    
+    #sidebar-tools {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        width: 100vw;
+        height: 90px;
+        flex-direction: row;
+        justify-content: space-around;
+        padding-top: 0;
+        border-right: none;
+        border-top: 1px solid #2a2a2a;
     }
 
-    #filter-buttons {
-        gap: 8px;
+    .sidebar-btn {
+        width: 75px;
+        height: 75px;
+    }
+
+    .sidebar-btn-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    #sub-panel {
+        top: auto;
+        bottom: 90px;
+        left: 0;
+        width: 100vw;
+        height: 280px;
+        padding-top: 15px;
+        border-right: none;
+        border-top: 1px solid #333;
+    }
+
+    #tg-notification-frame,
+    #telegram-link-btn { 
+        display: none !important; 
     }
 }
